@@ -7,6 +7,9 @@ const ORG_NAME_BACKEND:{ [key: string]: string; } = {
   "gcr": "https://gcr.io",
   "k8sgcr": "https://k8s.gcr.io",
   "quay": "https://quay.io",
+  "ghcr": "https://ghcr.io",
+  "k8s": "https://registry.k8s.io",
+  "cloudsmith": "https://docker.cloudsmith.io"
 }
 
 const DEFAULT_BACKEND_HOST: string = "https://registry-1.docker.io"
@@ -51,11 +54,37 @@ function rewritePathByOrg(orgName: string|null, pathname: string): string {
   return cleanSplitedPath.join("/")
 }
 
+function hostFromHostnameAndPathname(hostname: string,pathname: string): string | null {
+  const splitedPath: string[] = pathname.split("/", 3)
+  if (splitedPath.length !== 3 || splitedPath[2] === "") {
+    return null
+  }
+
+  const parts = hostname.split('.');
+  const key = parts[0];
+  if (ORG_NAME_BACKEND.hasOwnProperty(key)) {
+    return ORG_NAME_BACKEND[key];
+  }
+  return null;
+}
+
+
 async function handleRegistryRequest(request: Request): Promise<Response> {
   const reqURL = new URL(request.url)
-  const orgName = orgNameFromPath(reqURL.pathname)
-  const pathname = rewritePathByOrg(orgName, reqURL.pathname)
-  const host = hostByOrgName(orgName)
+
+  let host :string
+  let pathname :string
+
+  const domainHost = hostFromHostnameAndPathname(reqURL.hostname, reqURL.pathname)
+  if (domainHost !== null) {
+    host = domainHost
+    pathname = reqURL.pathname
+  } else {
+    const orgName = orgNameFromPath(reqURL.pathname)
+    pathname = rewritePathByOrg(orgName, reqURL.pathname)
+    host = hostByOrgName(orgName)
+  }
+
   const tokenProvider = new TokenProvider()
   const backend = new Backend(host, tokenProvider)
   const headers = copyProxyHeaders(request.headers)
