@@ -54,8 +54,28 @@ EOF
 
 ### 获取其他镜像源镜像
 
-目前 hammal 支持获取 `k8s.gcr.io`, `gcr.io`, `quay.io` 的镜像，可以通过修改 handler.ts 中的 `ORG_NAME_BACKEND` 添加
+目前 hammal 支持获取下列站点的镜像
+- `k8s.gcr.io`
+- `gcr.io`
+- `quay.io` 
+- `ghcr.io`
+- `registry.k8s.io`
+- `docker.cloudsmith.io`
 
+可以通过 `handler.ts` 中的 `ORG_NAME_BACKEND` 修改和删减；
+
+```ts
+const ORG_NAME_BACKEND:{ [key: string]: string; } = {
+  "gcr": "https://gcr.io",
+  "k8sgcr": "https://k8s.gcr.io",
+  "quay": "https://quay.io",
+  "ghcr": "https://ghcr.io",
+  "k8s": "https://registry.k8s.io",
+  "cloudsmith": "https://docker.cloudsmith.io"
+}
+```
+
+#### 方式1 - 基于path的路由
 ```bash
 # 拉取 k8s.gcr.io 镜像
 docker pull hammal.{your_name}.workers.dev/k8sgcr/kubernetes-dashboard-amd64:v1.8.3
@@ -66,6 +86,21 @@ docker pull hammal.{your_name}.workers.dev/gcr/youlib/image:tags
 # 拉取 quay.io 镜像
 docker pull hammal.{your_name}.workers.dev/quay/coreos/flannel:v0.13.1-rc2
 ```
+
+#### 方式2 - 基于域名的路由
+为worker添加对应的自定义域名，如：`xxx.example.com`, `xxx` 与 `ORG_NAME_BACKEND`中的`key`值对应
+```bash
+# 拉取 k8s.gcr.io 镜像
+docker pull k8sgcr.example.com/kubernetes-dashboard-amd64:v1.8.3
+
+# 拉取 gcr.io 镜像
+docker pull gcr.example.com/youlib/image:tags
+
+# 拉取 quay.io 镜像
+docker pull quay.example.com/coreos/flannel:v0.13.1-rc2
+
+```
+
 
 ### TODO
 
